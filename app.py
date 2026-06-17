@@ -95,6 +95,16 @@ def get_releases():
             "error": str(e)
         }), 500
 
+@app.after_request
+def add_header(response):
+    """
+    Add headers to prevent browser caching of assets.
+    """
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 if __name__ == "__main__":
     # Run server on port 5000
     app.run(host="127.0.0.1", port=5000, debug=True)

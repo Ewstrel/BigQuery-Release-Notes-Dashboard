@@ -13,47 +13,47 @@ let state = {
 
 // --- DOM Element References ---
 const elements = {
-    refreshBtn: document.getElementById('refresh-btn'),
-    retryBtn: document.getElementById('retry-btn'),
-    cacheStatus: document.getElementById('cache-status'),
-    exportCsvBtn: document.getElementById('export-csv-btn'),
-    themeToggleBtn: document.getElementById('theme-toggle-btn'),
+    get refreshBtn() { return document.getElementById('refresh-btn'); },
+    get retryBtn() { return document.getElementById('retry-btn'); },
+    get cacheStatus() { return document.getElementById('cache-status'); },
+    get exportCsvBtn() { return document.getElementById('export-csv-btn'); },
+    get themeToggleBtn() { return document.getElementById('theme-toggle-btn'); },
     
     // Stats
-    statTotal: document.getElementById('stat-total'),
-    statFeatures: document.getElementById('stat-features'),
-    statChanges: document.getElementById('stat-changes'),
-    statIssues: document.getElementById('stat-issues'),
+    get statTotal() { return document.getElementById('stat-total'); },
+    get statFeatures() { return document.getElementById('stat-features'); },
+    get statChanges() { return document.getElementById('stat-changes'); },
+    get statIssues() { return document.getElementById('stat-issues'); },
     
     // Filtering
-    searchInput: document.getElementById('search-input'),
-    typeFilters: document.getElementById('type-filters'),
-    sortSelect: document.getElementById('sort-select'),
+    get searchInput() { return document.getElementById('search-input'); },
+    get typeFilters() { return document.getElementById('type-filters'); },
+    get sortSelect() { return document.getElementById('sort-select'); },
     
     // States & Grid
-    loadingState: document.getElementById('loading-state'),
-    errorState: document.getElementById('error-state'),
-    emptyState: document.getElementById('empty-state'),
-    errorMessage: document.getElementById('error-message'),
-    feedGrid: document.getElementById('feed-grid'),
+    get loadingState() { return document.getElementById('loading-state'); },
+    get errorState() { return document.getElementById('error-state'); },
+    get emptyState() { return document.getElementById('empty-state'); },
+    get errorMessage() { return document.getElementById('error-message'); },
+    get feedGrid() { return document.getElementById('feed-grid'); },
     
     // Floating Bar
-    floatingBar: document.getElementById('floating-select-bar'),
-    selectedCount: document.getElementById('selected-count'),
-    clearSelectionBtn: document.getElementById('clear-selection-btn'),
-    tweetSelectedBtn: document.getElementById('tweet-selected-btn'),
+    get floatingBar() { return document.getElementById('floating-select-bar'); },
+    get selectedCount() { return document.getElementById('selected-count'); },
+    get clearSelectionBtn() { return document.getElementById('clear-selection-btn'); },
+    get tweetSelectedBtn() { return document.getElementById('tweet-selected-btn'); },
     
     // Modal Composer
-    tweetModal: document.getElementById('tweet-modal'),
-    tweetTextarea: document.getElementById('tweet-textarea'),
-    charCounter: document.getElementById('char-counter'),
-    warningMsg: document.querySelector('.warning-msg'),
-    tweetPreviewList: document.getElementById('tweet-preview-list'),
-    closeModalBtn: document.getElementById('close-modal-btn'),
-    copyTweetBtn: document.getElementById('copy-tweet-btn'),
-    publishTweetBtn: document.getElementById('publish-tweet-btn'),
-    publishLinkedinBtn: document.getElementById('publish-linkedin-btn'),
-    publishTelegramBtn: document.getElementById('publish-telegram-btn')
+    get tweetModal() { return document.getElementById('tweet-modal'); },
+    get tweetTextarea() { return document.getElementById('tweet-textarea'); },
+    get charCounter() { return document.getElementById('char-counter'); },
+    get warningMsg() { return document.querySelector('.warning-msg'); },
+    get tweetPreviewList() { return document.getElementById('tweet-preview-list'); },
+    get closeModalBtn() { return document.getElementById('close-modal-btn'); },
+    get copyTweetBtn() { return document.getElementById('copy-tweet-btn'); },
+    get publishTweetBtn() { return document.getElementById('publish-tweet-btn'); },
+    get publishLinkedinBtn() { return document.getElementById('publish-linkedin-btn'); },
+    get publishTelegramBtn() { return document.getElementById('publish-telegram-btn'); }
 };
 
 // --- App Initialization ---
@@ -66,23 +66,23 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- Event Listeners Setup ---
 function initEventListeners() {
     // Refresh button
-    elements.refreshBtn.addEventListener('click', () => loadReleases(true));
-    elements.retryBtn.addEventListener('click', () => loadReleases(true));
+    elements.refreshBtn?.addEventListener('click', () => loadReleases(true));
+    elements.retryBtn?.addEventListener('click', () => loadReleases(true));
     
     // Theme toggle button
-    elements.themeToggleBtn.addEventListener('click', toggleTheme);
+    elements.themeToggleBtn?.addEventListener('click', toggleTheme);
     
     // Export CSV button
-    elements.exportCsvBtn.addEventListener('click', exportToCSV);
+    elements.exportCsvBtn?.addEventListener('click', exportToCSV);
     
     // Realtime search
-    elements.searchInput.addEventListener('input', (e) => {
+    elements.searchInput?.addEventListener('input', (e) => {
         state.filters.search = e.target.value.toLowerCase();
         renderFeed();
     });
     
     // Type badge filters
-    elements.typeFilters.addEventListener('click', (e) => {
+    elements.typeFilters?.addEventListener('click', (e) => {
         if (e.target.classList.contains('filter-badge')) {
             // Update active state of badges
             document.querySelectorAll('.filter-badge').forEach(btn => btn.classList.remove('active'));
@@ -94,16 +94,16 @@ function initEventListeners() {
     });
     
     // Sort dropdown
-    elements.sortSelect.addEventListener('change', (e) => {
+    elements.sortSelect?.addEventListener('change', (e) => {
         state.sortBy = e.target.value;
         renderFeed();
     });
     
     // Floating Bar: Clear selection
-    elements.clearSelectionBtn.addEventListener('click', clearSelection);
+    elements.clearSelectionBtn?.addEventListener('click', clearSelection);
     
     // Floating Bar: Tweet selected
-    elements.tweetSelectedBtn.addEventListener('click', () => {
+    elements.tweetSelectedBtn?.addEventListener('click', () => {
         const selectedUpdates = state.parsedUpdates.filter(up => state.selectedIds.has(up.id));
         if (selectedUpdates.length > 0) {
             openTweetModal(selectedUpdates);
@@ -111,21 +111,21 @@ function initEventListeners() {
     });
     
     // Modal: Close
-    elements.closeModalBtn.addEventListener('click', closeTweetModal);
-    elements.tweetModal.addEventListener('click', (e) => {
+    elements.closeModalBtn?.addEventListener('click', closeTweetModal);
+    elements.tweetModal?.addEventListener('click', (e) => {
         if (e.target === elements.tweetModal) closeTweetModal();
     });
     
     // Modal: Char count listener
-    elements.tweetTextarea.addEventListener('input', updateCharCount);
+    elements.tweetTextarea?.addEventListener('input', updateCharCount);
     
     // Modal: Copy Tweet Text
-    elements.copyTweetBtn.addEventListener('click', copyTweetText);
+    elements.copyTweetBtn?.addEventListener('click', copyTweetText);
     
     // Modal: Publish sharing intents
-    elements.publishTweetBtn.addEventListener('click', publishTweet);
-    elements.publishLinkedinBtn.addEventListener('click', publishLinkedin);
-    elements.publishTelegramBtn.addEventListener('click', publishTelegram);
+    elements.publishTweetBtn?.addEventListener('click', publishTweet);
+    elements.publishLinkedinBtn?.addEventListener('click', publishLinkedin);
+    elements.publishTelegramBtn?.addEventListener('click', publishTelegram);
 }
 
 // --- API Methods ---
@@ -133,9 +133,9 @@ async function loadReleases(forceRefresh = false) {
     showState('loading');
     
     // Spin refresh button
-    const refreshIcon = elements.refreshBtn.querySelector('svg');
+    const refreshIcon = elements.refreshBtn?.querySelector('svg');
     if (refreshIcon) refreshIcon.classList.add('spinning');
-    elements.refreshBtn.disabled = true;
+    if (elements.refreshBtn) elements.refreshBtn.disabled = true;
     
     try {
         const url = forceRefresh ? '/api/releases?refresh=true' : '/api/releases';
@@ -167,11 +167,13 @@ async function loadReleases(forceRefresh = false) {
         showState('grid');
     } catch (err) {
         console.error(err);
-        elements.errorMessage.textContent = err.message || 'Could not reach server API.';
+        if (elements.errorMessage) {
+            elements.errorMessage.textContent = err.message || 'Could not reach server API.';
+        }
         showState('error');
     } finally {
         if (refreshIcon) refreshIcon.classList.remove('spinning');
-        elements.refreshBtn.disabled = false;
+        if (elements.refreshBtn) elements.refreshBtn.disabled = false;
     }
 }
 
@@ -372,12 +374,12 @@ function clearSelection() {
 
 function updateFloatingBar() {
     const count = state.selectedIds.size;
-    elements.selectedCount.textContent = count;
+    if (elements.selectedCount) elements.selectedCount.textContent = count;
     
     if (count > 0) {
-        elements.floatingBar.classList.add('active');
+        elements.floatingBar?.classList.add('active');
     } else {
-        elements.floatingBar.classList.remove('active');
+        elements.floatingBar?.classList.remove('active');
     }
 }
 
@@ -395,10 +397,10 @@ function calculateStats() {
         else if (type === 'issue' || type === 'breaking') issues++;
     });
     
-    elements.statTotal.textContent = total;
-    elements.statFeatures.textContent = features;
-    elements.statChanges.textContent = changes;
-    elements.statIssues.textContent = issues;
+    if (elements.statTotal) elements.statTotal.textContent = total;
+    if (elements.statFeatures) elements.statFeatures.textContent = features;
+    if (elements.statChanges) elements.statChanges.textContent = changes;
+    if (elements.statIssues) elements.statIssues.textContent = issues;
 }
 
 // --- Helper Utilities ---
@@ -420,7 +422,7 @@ function getPlainText(html) {
 }
 
 function updateCacheStatus(epochSeconds, fromCache) {
-    if (!epochSeconds) return;
+    if (!epochSeconds || !elements.cacheStatus) return;
     const fetchDate = new Date(epochSeconds * 1000);
     const dateStr = fetchDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     
@@ -430,10 +432,10 @@ function updateCacheStatus(epochSeconds, fromCache) {
 }
 
 function showState(mode) {
-    elements.loadingState.classList.toggle('hidden', mode !== 'loading');
-    elements.errorState.classList.toggle('hidden', mode !== 'error');
-    elements.emptyState.classList.toggle('hidden', mode !== 'empty');
-    elements.feedGrid.classList.toggle('hidden', mode !== 'grid');
+    elements.loadingState?.classList.toggle('hidden', mode !== 'loading');
+    elements.errorState?.classList.toggle('hidden', mode !== 'error');
+    elements.emptyState?.classList.toggle('hidden', mode !== 'empty');
+    elements.feedGrid?.classList.toggle('hidden', mode !== 'grid');
 }
 
 // --- Tweet Composer Modal Methods ---
@@ -444,28 +446,30 @@ function openTweetModal(updates) {
     
     // Generate prefilled text
     const tweetText = generateTweetText(updates);
-    elements.tweetTextarea.value = tweetText;
+    if (elements.tweetTextarea) elements.tweetTextarea.value = tweetText;
     
     // Render previews
-    elements.tweetPreviewList.innerHTML = '';
-    updates.forEach(up => {
-        const previewItem = document.createElement('div');
-        previewItem.className = 'preview-item';
-        previewItem.innerHTML = `
-            <strong>[${up.type}] ${up.date}</strong>
-            <p>${getPlainText(up.content).substring(0, 100)}...</p>
-        `;
-        elements.tweetPreviewList.appendChild(previewItem);
-    });
+    if (elements.tweetPreviewList) {
+        elements.tweetPreviewList.innerHTML = '';
+        updates.forEach(up => {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            previewItem.innerHTML = `
+                <strong>[${up.type}] ${up.date}</strong>
+                <p>${getPlainText(up.content).substring(0, 100)}...</p>
+            `;
+            elements.tweetPreviewList.appendChild(previewItem);
+        });
+    }
     
     updateCharCount();
     
-    elements.tweetModal.classList.add('active');
+    elements.tweetModal?.classList.add('active');
     document.body.style.overflow = 'hidden'; // Lock background scrolling
 }
 
 function closeTweetModal() {
-    elements.tweetModal.classList.remove('active');
+    elements.tweetModal?.classList.remove('active');
     document.body.style.overflow = ''; // Restore scroll
 }
 
@@ -532,8 +536,9 @@ function generateTweetText(updates) {
 }
 
 function updateCharCount() {
+    if (!elements.tweetTextarea) return;
     const len = elements.tweetTextarea.value.length;
-    elements.charCounter.textContent = `${len} / 280`;
+    if (elements.charCounter) elements.charCounter.textContent = `${len} / 280`;
     
     // SVG Progress Ring calculations
     const ringCircle = document.querySelector('.progress-ring__circle');
@@ -555,36 +560,40 @@ function updateCharCount() {
     }
     
     // Manage class styling for indicator
-    elements.charCounter.classList.remove('near-limit', 'over-limit');
-    elements.warningMsg.classList.add('hidden');
+    elements.charCounter?.classList.remove('near-limit', 'over-limit');
+    elements.warningMsg?.classList.add('hidden');
     
     if (len > 280) {
-        elements.charCounter.classList.add('over-limit');
-        elements.warningMsg.classList.remove('hidden');
+        elements.charCounter?.classList.add('over-limit');
+        elements.warningMsg?.classList.remove('hidden');
     } else if (len > 250) {
-        elements.charCounter.classList.add('near-limit');
+        elements.charCounter?.classList.add('near-limit');
     }
 }
 
 function copyTweetText() {
+    if (!elements.tweetTextarea) return;
     const text = elements.tweetTextarea.value;
     navigator.clipboard.writeText(text).then(() => {
-        const origText = elements.copyTweetBtn.textContent;
-        elements.copyTweetBtn.textContent = 'Copied!';
-        elements.copyTweetBtn.classList.add('btn-success');
-        elements.copyTweetBtn.classList.remove('btn-secondary');
-        
-        setTimeout(() => {
-            elements.copyTweetBtn.textContent = origText;
-            elements.copyTweetBtn.classList.remove('btn-success');
-            elements.copyTweetBtn.classList.add('btn-secondary');
-        }, 2000);
+        if (elements.copyTweetBtn) {
+            const origText = elements.copyTweetBtn.textContent;
+            elements.copyTweetBtn.textContent = 'Copied!';
+            elements.copyTweetBtn.classList.add('btn-success');
+            elements.copyTweetBtn.classList.remove('btn-secondary');
+            
+            setTimeout(() => {
+                elements.copyTweetBtn.textContent = origText;
+                elements.copyTweetBtn.classList.remove('btn-success');
+                elements.copyTweetBtn.classList.add('btn-secondary');
+            }, 2000);
+        }
     }).catch(err => {
         console.error('Clipboard copy failed: ', err);
     });
 }
 
 function publishTweet() {
+    if (!elements.tweetTextarea) return;
     const text = elements.tweetTextarea.value;
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -592,6 +601,7 @@ function publishTweet() {
 }
 
 function publishTelegram() {
+    if (!elements.tweetTextarea) return;
     const text = elements.tweetTextarea.value;
     const url = `https://t.me/share/url?url=&text=${encodeURIComponent(text)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -599,6 +609,7 @@ function publishTelegram() {
 }
 
 function publishLinkedin() {
+    if (!elements.tweetTextarea) return;
     const text = elements.tweetTextarea.value;
     const firstLink = activeTweetUpdates.length > 0 ? activeTweetUpdates[0].link : 'https://docs.cloud.google.com/bigquery/docs/release-notes';
     
