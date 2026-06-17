@@ -95,6 +95,29 @@ def get_releases():
             "error": str(e)
         }), 500
 
+@app.route("/api/log_error", methods=["POST"])
+def log_error():
+    try:
+        data = request.json or {}
+        message = data.get("message", "Unknown error")
+        source = data.get("source", "unknown")
+        lineno = data.get("lineno", "?")
+        colno = data.get("colno", "?")
+        stack = data.get("stack", "")
+        
+        print("\n" + "="*50)
+        print(f"CLIENT-SIDE JS ERROR:")
+        print(f"Message: {message}")
+        print(f"Source: {source} at line {lineno}:{colno}")
+        if stack:
+            print("Stack Trace:")
+            print(stack)
+        print("="*50 + "\n")
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"Error logging client error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.after_request
 def add_header(response):
     """
