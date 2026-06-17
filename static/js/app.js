@@ -233,6 +233,15 @@ function renderMatches() {
     if (!grid) return;
     grid.innerHTML = '';
     
+    const formatDate = (dateStr) => {
+        try {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        } catch (e) {
+            return dateStr;
+        }
+    };
+    
     // 1. Filter
     let filtered = state.rawMatches.filter(m => {
         // Status filter (Completed / Scheduled)
@@ -311,7 +320,7 @@ function renderMatches() {
             <div class="card-header">
                 <span class="badge ${isPlayed ? 'badge-feature' : 'badge-change'}">${isPlayed ? 'FT Result' : 'Upcoming'}</span>
                 <span class="badge badge-announcement">${match.group || 'Playoffs'}</span>
-                <span class="card-date">${match.round}</span>
+                <span class="card-date">${formatDate(match.date)}</span>
             </div>
             <div class="card-body">
                 <div class="team-row">
@@ -331,7 +340,7 @@ function renderMatches() {
                 ${goalsHtml}
             </div>
             <div class="card-footer">
-                <div class="match-venue" title="${match.ground}">📍 ${match.ground}</div>
+                <div class="match-venue" title="${match.ground} (${match.round})">📍 ${match.ground} (${match.round})</div>
                 <div class="card-actions">
                     <button class="copy-card-btn" data-id="${match.id}" title="Copy scorecard">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
