@@ -1219,14 +1219,25 @@ function renderBracket() {
         `;
     });
 
-    // 4. Draw junction dots for rounds
+    // 4. Draw junction dots or winner flags for rounds
     Object.values(treeNodes).forEach(node => {
         const match = matchesMap[node.id];
-        const isCompleted = match && 'score' in match;
+        const winnerName = match ? getMatchWinner(match) : null;
         
-        svgHtml += `
-            <circle cx="${node.x}" cy="${node.y}" r="${node.level === 4 ? '5.5' : '4.5'}" class="bracket-dot ${isCompleted ? 'completed' : ''}" data-match-id="${node.id}" />
-        `;
+        if (winnerName) {
+            const flagUrl = getFlagUrl(winnerName);
+            svgHtml += `
+                <g class="bracket-flag-wrapper" style="--flag-cx: ${node.x}px; --flag-cy: ${node.y}px;" data-match-id="${node.id}">
+                    <circle cx="${node.x}" cy="${node.y}" r="12" fill="var(--bg-card)" stroke="var(--primary)" stroke-width="1.8" />
+                    <image href="${flagUrl}" x="${node.x - 9.5}" y="${node.y - 9.5}" width="19" height="19" clip-path="url(#flag-clip)" />
+                </g>
+            `;
+        } else {
+            const isCompleted = match && 'score' in match;
+            svgHtml += `
+                <circle cx="${node.x}" cy="${node.y}" r="${node.level === 4 ? '5.5' : '4.5'}" class="bracket-dot ${isCompleted ? 'completed' : ''}" data-match-id="${node.id}" />
+            `;
+        }
     });
 
     // 5. Draw Central Trophy
