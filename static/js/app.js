@@ -996,7 +996,7 @@ function renderBracket() {
 
     // Outermost level: Round of 32 (16 junctions at radius 270)
     r32Order.forEach((matchNum, idx) => {
-        const matchId = `match_${matchNum - 1}`;
+        const matchId = `match_${matchNum}`;
         const angle = (idx * 360) / 16;
         treeNodes[matchId] = {
             id: matchId,
@@ -1126,7 +1126,7 @@ function renderBracket() {
 
     // 3. Draw outermost flag circles and lines connecting to Round of 32 junctions
     r32Order.forEach((matchNum, idx) => {
-        const matchId = `match_${matchNum - 1}`;
+        const matchId = `match_${matchNum}`;
         const match = matchesMap[matchId];
         if (!match) return;
 
