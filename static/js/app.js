@@ -978,6 +978,42 @@ function getResolvedPlayoffMatches() {
     return resolvedPlayoffMatches;
 }
 
+function getAngleStats(t1, t2) {
+    let diff = t2 - t1;
+    while (diff < -180) diff += 360;
+    while (diff > 180) diff -= 360;
+    
+    const thetaMid = (t1 + diff / 2 + 360) % 360;
+    const sweep = diff >= 0 ? 1 : 0;
+    const largeArc = Math.abs(diff) > 180 ? 1 : 0;
+    
+    return { thetaMid, sweep, largeArc };
+}
+
+function getCircularConnectionPath(rParent, rChild, theta1, theta2, rArc, thetaMid, sweep, largeArc) {
+    const rad1 = (theta1 * Math.PI) / 180;
+    const rad2 = (theta2 * Math.PI) / 180;
+    const radMid = (thetaMid * Math.PI) / 180;
+
+    const p1_start_x = 400 + rParent * Math.cos(rad1);
+    const p1_start_y = 400 + rParent * Math.sin(rad1);
+    const p1_arc_x = 400 + rArc * Math.cos(rad1);
+    const p1_arc_y = 400 + rArc * Math.sin(rad1);
+
+    const p2_start_x = 400 + rParent * Math.cos(rad2);
+    const p2_start_y = 400 + rParent * Math.sin(rad2);
+    const p2_arc_x = 400 + rArc * Math.cos(rad2);
+    const p2_arc_y = 400 + rArc * Math.sin(rad2);
+
+    const pm_arc_x = 400 + rArc * Math.cos(radMid);
+    const pm_arc_y = 400 + rArc * Math.sin(radMid);
+
+    const p_child_x = 400 + rChild * Math.cos(radMid);
+    const p_child_y = 400 + rChild * Math.sin(radMid);
+
+    return `M ${p1_start_x} ${p1_start_y} L ${p1_arc_x} ${p1_arc_y} A ${rArc} ${rArc} 0 ${largeArc} ${sweep} ${p2_arc_x} ${p2_arc_y} L ${p2_start_x} ${p2_start_y} M ${pm_arc_x} ${pm_arc_y} L ${p_child_x} ${p_child_y}`;
+}
+
 function renderBracket() {
     const container = elements.bracketScrollContainer;
     if (!container) return;
@@ -1092,13 +1128,13 @@ function renderBracket() {
     let svgHtml = `
     <svg viewBox="0 0 800 800" width="100%" height="100%" class="radial-bracket-svg" style="max-width:720px; aspect-ratio:1/1;">
         <defs>
-            <clipPath id="flag-clip">
-                <circle r="12" cx="0" cy="0" />
+            <clipPath id="flag-clip" clipPathUnits="objectBoundingBox">
+                <circle r="0.5" cx="0.5" cy="0.5" />
             </clipPath>
         </defs>
     `;
 
-    // 2. Draw lines between junctions
+    // 2. Draw lines between junctions (with circular arcs)
     Object.values(treeNodes).forEach(node => {
         if (node.children) {
             const parent1 = treeNodes[node.children[0]];
@@ -1107,9 +1143,15 @@ function renderBracket() {
             const mNode = matchesMap[node.id];
             const isCompleted = mNode && 'score' in mNode;
             
+            const rParent = parent1.r;
+            const rChild = node.r;
+            const rArc = rParent - (rParent - rChild) * 0.45;
+            
+            const { thetaMid, sweep, largeArc } = getAngleStats(parent1.angle, parent2.angle);
+            const pathStr = getCircularConnectionPath(rParent, rChild, parent1.angle, parent2.angle, rArc, thetaMid, sweep, largeArc);
+            
             svgHtml += `
-                <line x1="${parent1.x}" y1="${parent1.y}" x2="${node.x}" y2="${node.y}" class="bracket-line ${isCompleted ? 'active' : ''}" />
-                <line x1="${parent2.x}" y1="${parent2.y}" x2="${node.x}" y2="${node.y}" class="bracket-line ${isCompleted ? 'active' : ''}" />
+                <path d="${pathStr}" class="bracket-line ${isCompleted ? 'active' : ''}" />
             `;
         }
     });
@@ -1119,9 +1161,11 @@ function renderBracket() {
     const sf2 = treeNodes['match_101'];
     const finalMatch = matchesMap[finalMatchId];
     const finalCompleted = finalMatch && 'score' in finalMatch;
+    
+    const { thetaMid: finalThetaMid, sweep: finalSweep, largeArc: finalLargeArc } = getAngleStats(sf1.angle, sf2.angle);
+    const finalPathStr = getCircularConnectionPath(75, 30, sf1.angle, sf2.angle, 50, finalThetaMid, finalSweep, finalLargeArc);
     svgHtml += `
-        <line x1="${sf1.x}" y1="${sf1.y}" x2="400" y2="400" class="bracket-line ${finalCompleted ? 'active' : ''}" />
-        <line x1="${sf2.x}" y1="${sf2.y}" x2="400" y2="400" class="bracket-line ${finalCompleted ? 'active' : ''}" />
+        <path d="${finalPathStr}" class="bracket-line ${finalCompleted ? 'active' : ''}" />
     `;
 
     // 3. Draw outermost flag circles and lines connecting to Round of 32 junctions
@@ -1133,7 +1177,7 @@ function renderBracket() {
         const node = treeNodes[matchId];
         const angle = node.angle;
 
-        const rFlag = 328;
+        const rFlag = 332;
         const angleOffset = 4.8;
         
         const a1 = angle - angleOffset;
@@ -1148,9 +1192,15 @@ function renderBracket() {
         const flag2 = getFlagUrl(match.team2_resolved);
 
         const isCompleted = 'score' in match;
+        const rParent = rFlag;
+        const rChild = node.r;
+        const rArc = rParent - (rParent - rChild) * 0.4;
+        
+        const { thetaMid, sweep, largeArc } = getAngleStats(a1, a2);
+        const pathStr = getCircularConnectionPath(rParent, rChild, a1, a2, rArc, thetaMid, sweep, largeArc);
+
         svgHtml += `
-            <line x1="${f1x}" y1="${f1y}" x2="${node.x}" y2="${node.y}" class="bracket-line ${isCompleted ? 'active' : ''}" />
-            <line x1="${f2x}" y1="${f2y}" x2="${node.x}" y2="${node.y}" class="bracket-line ${isCompleted ? 'active' : ''}" />
+            <path d="${pathStr}" class="bracket-line ${isCompleted ? 'active' : ''}" />
         `;
 
         const team1Winner = getMatchWinner(match) === match.team1_resolved;
