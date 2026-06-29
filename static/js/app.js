@@ -1126,7 +1126,7 @@ function renderBracket() {
 
     // Start SVG string
     let svgHtml = `
-    <svg viewBox="0 0 800 800" width="100%" height="100%" class="radial-bracket-svg" style="max-width:720px; aspect-ratio:1/1;">
+    <svg viewBox="0 0 800 800" width="100%" height="100%" class="radial-bracket-svg" style="max-width:980px; aspect-ratio:1/1;">
         <defs>
             <clipPath id="flag-clip" clipPathUnits="objectBoundingBox">
                 <circle r="0.5" cx="0.5" cy="0.5" />
