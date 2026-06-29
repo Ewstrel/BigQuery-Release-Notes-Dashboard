@@ -1360,8 +1360,7 @@ body.light-theme .standings-table th {
     width: 0.95rem;
     height: 0.95rem;
 }
-
-/* --- Playoff Bracket Layout --- */
+/* --- Playoff Radial Bracket Layout --- */
 .bracket-view {
     width: 100%;
     margin-top: 0.5rem;
@@ -1369,236 +1368,136 @@ body.light-theme .standings-table th {
     animation: fadeIn 0.4s ease;
 }
 
-.bracket-scroll-container {
-    display: flex;
-    gap: 3.5rem;
-    overflow-x: auto;
-    padding: 3rem 1rem 3rem 1rem;
-    min-height: 850px;
-    scroll-behavior: smooth;
-    position: relative;
-}
-
-/* Styling for custom scrollbar */
-.bracket-scroll-container::-webkit-scrollbar {
-    height: 8px;
-}
-.bracket-scroll-container::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 4px;
-}
-.bracket-scroll-container::-webkit-scrollbar-thumb {
-    background: var(--border-color-hover);
-    border-radius: 4px;
-}
-.bracket-scroll-container::-webkit-scrollbar-thumb:hover {
-    background: var(--primary);
-}
-
-.bracket-round {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    min-width: 260px;
-    flex-shrink: 0;
-    position: relative;
-}
-
-.bracket-round-header {
-    position: absolute;
-    top: -2rem;
-    left: 0;
+.radial-bracket-container {
     width: 100%;
-    text-align: center;
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 0.5rem;
-}
-
-/* Bracket Match Cards */
-.bracket-match {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0 3rem 0;
+    position: relative;
+    overflow-x: auto;
+}
+
+.radial-bracket-svg {
     background-color: var(--bg-card);
     backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
-    padding: 0.75rem;
-    position: relative;
+    border-radius: 16px;
     box-shadow: var(--card-shadow);
-    transition: var(--transition-normal);
-    width: 100%;
+    padding: 1rem;
+    transition: background-color var(--transition-normal), border var(--transition-normal);
+}
+
+body.light-theme .radial-bracket-svg {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+.bracket-line {
+    stroke: var(--border-color);
+    stroke-width: 1.5px;
+    fill: none;
+    transition: stroke var(--transition-fast), stroke-width var(--transition-fast);
+}
+
+body.light-theme .bracket-line {
+    stroke: rgba(0, 0, 0, 0.1);
+}
+
+.bracket-line.active {
+    stroke: var(--primary);
+    stroke-width: 2.5px;
+}
+
+.bracket-dot {
+    fill: var(--bg-main);
+    stroke: var(--border-color-hover);
+    stroke-width: 1.5px;
     cursor: pointer;
+    transition: fill var(--transition-fast), stroke var(--transition-fast), r var(--transition-fast);
 }
 
-.bracket-match:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: var(--card-shadow-hover), 0 0 15px rgba(16, 185, 129, 0.15);
+body.light-theme .bracket-dot {
+    fill: #fff;
+    stroke: rgba(0, 0, 0, 0.15);
 }
 
-.bracket-match-header {
-    display: flex;
-    justify-content: space-between;
+.bracket-dot:hover {
+    fill: var(--primary);
+    stroke: #fff;
+    r: 7px;
+}
+
+.bracket-dot.completed {
+    stroke: var(--primary);
+    fill: var(--primary);
+}
+
+/* Flag circle groups in SVG */
+.bracket-flag-wrapper {
+    cursor: pointer;
+    transform-origin: var(--flag-cx) var(--flag-cy);
+    transition: transform var(--transition-fast);
+}
+
+.bracket-flag-wrapper:hover {
+    transform: scale(1.2);
+}
+
+/* Tooltip Styles */
+.bracket-tooltip {
+    position: absolute;
+    background: rgba(11, 29, 21, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color-hover);
+    border-radius: 10px;
+    padding: 0.8rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    pointer-events: none;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    min-width: 185px;
+    transition: opacity 0.15s ease;
+    opacity: 0;
+}
+
+body.light-theme .bracket-tooltip {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    color: var(--text-primary);
+}
+
+.bracket-tooltip-header {
+    font-weight: 700;
     font-size: 0.65rem;
     color: var(--text-muted);
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    padding-bottom: 0.25rem;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.2rem;
 }
 
-body.light-theme .bracket-match-header {
-    border-bottom-color: rgba(0, 0, 0, 0.04);
+body.light-theme .bracket-tooltip-header {
+    border-bottom-color: rgba(0, 0, 0, 0.08);
 }
 
-.bracket-match-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-}
-
-.bracket-team-row {
+.bracket-tooltip-team {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    padding: 0.1rem 0;
-}
-
-.bracket-team-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 80%;
-}
-
-.bracket-team-flag {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid var(--border-color);
-    flex-shrink: 0;
-}
-
-.bracket-team-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.bracket-team-score {
-    font-weight: 700;
-    color: var(--text-primary);
-    font-family: monospace;
-    font-size: 0.85rem;
-}
-
-/* Winner / Loser / TBD styles */
-.bracket-team-row.winner {
-    color: var(--primary);
-    font-weight: 600;
-}
-.bracket-team-row.winner .bracket-team-score {
-    color: var(--primary);
-}
-
-.bracket-team-row.loser {
-    opacity: 0.45;
-}
-
-.bracket-team-row.tbd {
-    color: var(--text-muted);
-    font-style: italic;
-}
-
-/* Connector Lines System using pseudo-elements */
-/* Right connectors for matches (outgoing) */
-.bracket-match::after {
-    content: '';
-    position: absolute;
-    right: -1.75rem;
-    top: 50%;
-    width: 1.75rem;
-    height: 2px;
-    background-color: var(--border-color);
-    z-index: 1;
-    pointer-events: none;
-}
-
-/* Last round (Final) has no right connector */
-.bracket-round:last-child .bracket-match::after {
-    display: none;
-}
-
-/* Left connectors for matches (incoming) */
-.bracket-match::before {
-    content: '';
-    position: absolute;
-    left: -1.75rem;
-    top: 50%;
-    width: 1.75rem;
-    height: 2px;
-    background-color: var(--border-color);
-    z-index: 1;
-    pointer-events: none;
-}
-
-/* First round (Round of 32) has no left connector */
-.bracket-round:first-child .bracket-match::before {
-    display: none;
-}
-
-/* Vertical joining lines:
-   For rounds 2, 3, 4, 5, we draw vertical brackets connecting the two parents.
-*/
-.bracket-round:not(:first-child) .bracket-match:nth-child(odd)::before {
-    height: var(--connector-height, 100px);
-    border-left: 2px solid var(--border-color);
-    border-top: 2px solid var(--border-color);
-    top: 50%;
-    border-radius: 4px 0 0 0;
-    background: transparent;
-}
-
-.bracket-round:not(:first-child) .bracket-match:nth-child(even)::before {
-    height: var(--connector-height, 100px);
-    border-left: 2px solid var(--border-color);
-    border-bottom: 2px solid var(--border-color);
-    top: calc(50% - var(--connector-height, 100px));
-    border-radius: 0 0 0 4px;
-    background: transparent;
-}
-
-/* Set specific connector heights for each round column to align vertically */
-.bracket-round:nth-child(2) {
-    --connector-height: 52px;
-}
-.bracket-round:nth-child(3) {
-    --connector-height: 104px;
-}
-.bracket-round:nth-child(4) {
-    --connector-height: 208px;
-}
-.bracket-round:nth-child(5) {
-    --connector-height: 416px;
+    margin: 0.3rem 0;
 }
 
 /* Hide sidebar layout adjustments when showing bracket */
 .main-layout-wrapper.show-bracket {
     grid-template-columns: 1fr !important;
 }
+
 .main-layout-wrapper.show-bracket .sidebar-column {
     display: none !important;
 }
+
 .main-layout-wrapper.show-bracket .feed-wrapper {
     max-width: 100%;
 }

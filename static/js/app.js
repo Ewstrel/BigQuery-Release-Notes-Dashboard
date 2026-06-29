@@ -982,102 +982,388 @@ function renderBracket() {
     const container = elements.bracketScrollContainer;
     if (!container) return;
     container.innerHTML = '';
+    container.className = 'radial-bracket-container';
 
     const resolvedPlayoffs = getResolvedPlayoffMatches();
-    const roundNames = ['Round of 32', 'Round of 16', 'Quarter-final', 'Semi-final', 'Final'];
-    
-    const roundsData = {
-        'Round of 32': resolvedPlayoffs.filter(m => m.round === 'Round of 32'),
-        'Round of 16': resolvedPlayoffs.filter(m => m.round === 'Round of 16'),
-        'Quarter-final': resolvedPlayoffs.filter(m => m.round === 'Quarter-final'),
-        'Semi-final': resolvedPlayoffs.filter(m => m.round === 'Semi-final'),
-        'Final': resolvedPlayoffs.filter(m => m.round === 'Final' || m.round === 'Match for third place')
-    };
+    const matchesMap = {};
+    resolvedPlayoffs.forEach(m => {
+        matchesMap[m.id] = m;
+    });
 
-    roundNames.forEach(roundName => {
-        const roundDiv = document.createElement('div');
-        roundDiv.className = 'bracket-round';
+    // 1. Build coordinate tree nodes in polar format mapped to cartesian
+    const treeNodes = {};
+    const r32Order = [73, 76, 72, 74, 82, 83, 80, 81, 75, 77, 78, 79, 85, 87, 84, 86];
+
+    // Outermost level: Round of 32 (16 junctions at radius 270)
+    r32Order.forEach((matchNum, idx) => {
+        const matchId = `match_${matchNum - 1}`;
+        const angle = (idx * 360) / 16;
+        treeNodes[matchId] = {
+            id: matchId,
+            matchNum: matchNum,
+            level: 4,
+            angle: angle,
+            r: 270,
+            x: 400 + 270 * Math.cos((angle * Math.PI) / 180),
+            y: 400 + 270 * Math.sin((angle * Math.PI) / 180)
+        };
+    });
+
+    // Level 3: Round of 16 (8 junctions at radius 200)
+    const r16Mapping = [
+        { id: 'match_88', children: ['match_73', 'match_76'] },
+        { id: 'match_89', children: ['match_72', 'match_74'] },
+        { id: 'match_92', children: ['match_82', 'match_83'] },
+        { id: 'match_93', children: ['match_80', 'match_81'] },
+        { id: 'match_90', children: ['match_75', 'match_77'] },
+        { id: 'match_91', children: ['match_78', 'match_79'] },
+        { id: 'match_94', children: ['match_85', 'match_87'] },
+        { id: 'match_95', children: ['match_84', 'match_86'] }
+    ];
+    r16Mapping.forEach(item => {
+        const c1 = treeNodes[item.children[0]];
+        const c2 = treeNodes[item.children[1]];
+        let diff = Math.abs(c1.angle - c2.angle);
+        if (diff > 180) diff = 360 - diff;
+        const angle = c1.angle + (c2.angle > c1.angle ? diff / 2 : -diff / 2);
         
-        const header = document.createElement('div');
-        header.className = 'bracket-round-header';
-        header.textContent = roundName;
-        roundDiv.appendChild(header);
+        treeNodes[item.id] = {
+            id: item.id,
+            level: 3,
+            angle: angle,
+            r: 200,
+            x: 400 + 200 * Math.cos((angle * Math.PI) / 180),
+            y: 400 + 200 * Math.sin((angle * Math.PI) / 180),
+            children: item.children
+        };
+    });
 
-        const matches = roundsData[roundName] || [];
-        matches.forEach(match => {
-            const matchCard = document.createElement('div');
-            matchCard.className = 'bracket-match';
-            matchCard.dataset.id = match.id;
+    // Level 2: Quarter-finals (4 junctions at radius 135)
+    const qfMapping = [
+        { id: 'match_96', children: ['match_88', 'match_89'] },
+        { id: 'match_97', children: ['match_92', 'match_93'] },
+        { id: 'match_98', children: ['match_90', 'match_91'] },
+        { id: 'match_99', children: ['match_94', 'match_95'] }
+    ];
+    qfMapping.forEach(item => {
+        const c1 = treeNodes[item.children[0]];
+        const c2 = treeNodes[item.children[1]];
+        let diff = Math.abs(c1.angle - c2.angle);
+        if (diff > 180) diff = 360 - diff;
+        const angle = c1.angle + (c2.angle > c1.angle ? diff / 2 : -diff / 2);
 
-            const isPlayed = 'score' in match;
-            const score1 = isPlayed ? match.score.ft[0] : '-';
-            const score2 = isPlayed ? match.score.ft[1] : '-';
+        treeNodes[item.id] = {
+            id: item.id,
+            level: 2,
+            angle: angle,
+            r: 135,
+            x: 400 + 135 * Math.cos((angle * Math.PI) / 180),
+            y: 400 + 135 * Math.sin((angle * Math.PI) / 180),
+            children: item.children
+        };
+    });
 
-            const t1 = match.team1_resolved;
-            const t2 = match.team2_resolved;
+    // Level 1: Semi-finals (2 junctions at radius 75)
+    const sfMapping = [
+        { id: 'match_100', children: ['match_96', 'match_97'] },
+        { id: 'match_101', children: ['match_98', 'match_99'] }
+    ];
+    sfMapping.forEach(item => {
+        const c1 = treeNodes[item.children[0]];
+        const c2 = treeNodes[item.children[1]];
+        let diff = Math.abs(c1.angle - c2.angle);
+        if (diff > 180) diff = 360 - diff;
+        const angle = c1.angle + (c2.angle > c1.angle ? diff / 2 : -diff / 2);
 
-            const flag1 = getFlagUrl(t1);
-            const flag2 = getFlagUrl(t2);
+        treeNodes[item.id] = {
+            id: item.id,
+            level: 1,
+            angle: angle,
+            r: 75,
+            x: 400 + 75 * Math.cos((angle * Math.PI) / 180),
+            y: 400 + 75 * Math.sin((angle * Math.PI) / 180),
+            children: item.children
+        };
+    });
 
-            const isTbd1 = t1.startsWith('Winner') || t1.startsWith('Loser') || t1 === 'TBD';
-            const isTbd2 = t2.startsWith('Winner') || t2.startsWith('Loser') || t2 === 'TBD';
+    const finalMatchId = 'match_103';
 
-            const winnerName = getMatchWinner(match);
+    // Start SVG string
+    let svgHtml = `
+    <svg viewBox="0 0 800 800" width="100%" height="100%" class="radial-bracket-svg" style="max-width:720px; aspect-ratio:1/1;">
+        <defs>
+            <clipPath id="flag-clip">
+                <circle r="12" cx="0" cy="0" />
+            </clipPath>
+        </defs>
+    `;
 
-            let row1Class = 'bracket-team-row';
-            let row2Class = 'bracket-team-row';
+    // 2. Draw lines between junctions
+    Object.values(treeNodes).forEach(node => {
+        if (node.children) {
+            const parent1 = treeNodes[node.children[0]];
+            const parent2 = treeNodes[node.children[1]];
+            
+            const mNode = matchesMap[node.id];
+            const isCompleted = mNode && 'score' in mNode;
+            
+            svgHtml += `
+                <line x1="${parent1.x}" y1="${parent1.y}" x2="${node.x}" y2="${node.y}" class="bracket-line ${isCompleted ? 'active' : ''}" />
+                <line x1="${parent2.x}" y1="${parent2.y}" x2="${node.x}" y2="${node.y}" class="bracket-line ${isCompleted ? 'active' : ''}" />
+            `;
+        }
+    });
 
-            if (isTbd1) row1Class += ' tbd';
-            if (isTbd2) row2Class += ' tbd';
+    // Draw lines from Semi-Finals to the Final circle
+    const sf1 = treeNodes['match_100'];
+    const sf2 = treeNodes['match_101'];
+    const finalMatch = matchesMap[finalMatchId];
+    const finalCompleted = finalMatch && 'score' in finalMatch;
+    svgHtml += `
+        <line x1="${sf1.x}" y1="${sf1.y}" x2="400" y2="400" class="bracket-line ${finalCompleted ? 'active' : ''}" />
+        <line x1="${sf2.x}" y1="${sf2.y}" x2="400" y2="400" class="bracket-line ${finalCompleted ? 'active' : ''}" />
+    `;
 
-            if (winnerName) {
-                if (winnerName === t1) {
-                    row1Class += ' winner';
-                    row2Class += ' loser';
-                } else if (winnerName === t2) {
-                    row2Class += ' winner';
-                    row1Class += ' loser';
-                }
+    // 3. Draw outermost flag circles and lines connecting to Round of 32 junctions
+    r32Order.forEach((matchNum, idx) => {
+        const matchId = `match_${matchNum - 1}`;
+        const match = matchesMap[matchId];
+        if (!match) return;
+
+        const node = treeNodes[matchId];
+        const angle = node.angle;
+
+        const rFlag = 328;
+        const angleOffset = 4.8;
+        
+        const a1 = angle - angleOffset;
+        const a2 = angle + angleOffset;
+
+        const f1x = 400 + rFlag * Math.cos((a1 * Math.PI) / 180);
+        const f1y = 400 + rFlag * Math.sin((a1 * Math.PI) / 180);
+        const f2x = 400 + rFlag * Math.cos((a2 * Math.PI) / 180);
+        const f2y = 400 + rFlag * Math.sin((a2 * Math.PI) / 180);
+
+        const flag1 = getFlagUrl(match.team1_resolved);
+        const flag2 = getFlagUrl(match.team2_resolved);
+
+        const isCompleted = 'score' in match;
+        svgHtml += `
+            <line x1="${f1x}" y1="${f1y}" x2="${node.x}" y2="${node.y}" class="bracket-line ${isCompleted ? 'active' : ''}" />
+            <line x1="${f2x}" y1="${f2y}" x2="${node.x}" y2="${node.y}" class="bracket-line ${isCompleted ? 'active' : ''}" />
+        `;
+
+        const team1Winner = getMatchWinner(match) === match.team1_resolved;
+        const team2Winner = getMatchWinner(match) === match.team2_resolved;
+        const hasWinner = team1Winner || team2Winner;
+
+        svgHtml += `
+            <g class="bracket-flag-wrapper" style="--flag-cx: ${f1x}px; --flag-cy: ${f1y}px;" data-match-id="${match.id}">
+                <circle cx="${f1x}" cy="${f1y}" r="14" fill="var(--bg-card)" stroke="${team1Winner ? 'var(--primary)' : 'var(--border-color)'}" stroke-width="${team1Winner ? '2' : '1.5'}" style="opacity: ${hasWinner && !team1Winner ? '0.45' : '1'}" />
+                <image href="${flag1}" x="${f1x - 11}" y="${f1y - 11}" width="22" height="22" clip-path="url(#flag-clip)" style="opacity: ${hasWinner && !team1Winner ? '0.45' : '1'}" />
+            </g>
+            <g class="bracket-flag-wrapper" style="--flag-cx: ${f2x}px; --flag-cy: ${f2y}px;" data-match-id="${match.id}">
+                <circle cx="${f2x}" cy="${f2y}" r="14" fill="var(--bg-card)" stroke="${team2Winner ? 'var(--primary)' : 'var(--border-color)'}" stroke-width="${team2Winner ? '2' : '1.5'}" style="opacity: ${hasWinner && !team2Winner ? '0.45' : '1'}" />
+                <image href="${flag2}" x="${f2x - 11}" y="${f2y - 11}" width="22" height="22" clip-path="url(#flag-clip)" style="opacity: ${hasWinner && !team2Winner ? '0.45' : '1'}" />
+            </g>
+        `;
+    });
+
+    // 4. Draw junction dots for rounds
+    Object.values(treeNodes).forEach(node => {
+        const match = matchesMap[node.id];
+        const isCompleted = match && 'score' in match;
+        
+        svgHtml += `
+            <circle cx="${node.x}" cy="${node.y}" r="${node.level === 4 ? '5.5' : '4.5'}" class="bracket-dot ${isCompleted ? 'completed' : ''}" data-match-id="${node.id}" />
+        `;
+    });
+
+    // 5. Draw Central Trophy
+    svgHtml += `
+        <!-- Central FIFA Trophy Circle -->
+        <circle cx="400" cy="400" r="30" fill="var(--bg-main)" stroke="var(--primary)" stroke-width="2.5" />
+        <g transform="translate(400, 400) scale(0.9)" style="cursor:pointer;" id="trophy-center-btn">
+            <!-- Vector Trophy -->
+            <path d="M-10,-15 L10,-15 C10,-15 12,-5 10,5 C8,12 3,15 0,15 C-3,15 -8,12 -10,5 C-12,-5 -10,-15 -10,-15 Z" fill="#fbbf24" />
+            <path d="M-5,15 L5,15 L3,22 L-3,22 Z" fill="#d97706" />
+            <path d="M-8,22 L8,22 L8,25 L-8,25 Z" fill="#fbbf24" />
+            <path d="M-10,-5 C-15,-5 -17,-10 -15,-15 C-13,-18 -10,-15 -10,-15" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" />
+            <path d="M10,-5 C15,-5 17,-10 15,-15 C13,-18 10,-15 10,-15" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" />
+        </g>
+    `;
+
+    svgHtml += `</svg>`;
+    container.innerHTML = svgHtml;
+
+    const tooltip = document.getElementById('bracket-tooltip');
+    
+    // Bind Hover & Click Events
+    const interactiveElements = container.querySelectorAll('.bracket-flag-wrapper, .bracket-dot');
+    interactiveElements.forEach(el => {
+        const matchId = el.dataset.matchId;
+        const match = matchesMap[matchId];
+        if (!match) return;
+
+        el.addEventListener('mouseenter', (e) => {
+            showTooltip(e, match, tooltip);
+        });
+        
+        el.addEventListener('mousemove', (e) => {
+            positionTooltip(e, tooltip);
+        });
+
+        el.addEventListener('mouseleave', () => {
+            hideTooltip(tooltip);
+        });
+
+        el.addEventListener('click', () => {
+            openTweetModal([match]);
+        });
+    });
+
+    const trophyBtn = container.querySelector('#trophy-center-btn');
+    if (trophyBtn && finalMatch) {
+        trophyBtn.addEventListener('mouseenter', (e) => {
+            showTooltip(e, finalMatch, tooltip);
+        });
+        trophyBtn.addEventListener('mousemove', (e) => {
+            positionTooltip(e, tooltip);
+        });
+        trophyBtn.addEventListener('mouseleave', () => {
+            hideTooltip(tooltip);
+        });
+        trophyBtn.addEventListener('click', () => {
+            openTweetModal([finalMatch]);
+        });
+    }
+
+    // 6. Draw Third Place match card below the circle
+    const thirdPlaceMatch = resolvedPlayoffs.find(m => m.round === 'Match for third place');
+    if (thirdPlaceMatch) {
+        const thirdPlaceDiv = document.createElement('div');
+        thirdPlaceDiv.className = 'third-place-card-wrapper';
+        thirdPlaceDiv.style.width = '100%';
+        thirdPlaceDiv.style.display = 'flex';
+        thirdPlaceDiv.style.justifyContent = 'center';
+        
+        const isPlayed = 'score' in thirdPlaceMatch;
+        const score1 = isPlayed ? thirdPlaceMatch.score.ft[0] : '-';
+        const score2 = isPlayed ? thirdPlaceMatch.score.ft[1] : '-';
+        const flag1 = getFlagUrl(thirdPlaceMatch.team1_resolved);
+        const flag2 = getFlagUrl(thirdPlaceMatch.team2_resolved);
+
+        const winnerName = getMatchWinner(thirdPlaceMatch);
+        const t1 = thirdPlaceMatch.team1_resolved;
+        const t2 = thirdPlaceMatch.team2_resolved;
+
+        let row1Class = 'bracket-team-row';
+        let row2Class = 'bracket-team-row';
+        if (winnerName) {
+            if (winnerName === t1) {
+                row1Class += ' winner';
+                row2Class += ' loser';
+            } else if (winnerName === t2) {
+                row2Class += ' winner';
+                row1Class += ' loser';
             }
+        }
 
-            let formattedDate = match.date;
-            try {
-                const d = new Date(match.date);
-                formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            } catch (e) {}
-
-            const matchLabel = match.round === 'Match for third place' ? '3rd Place Match' : `Match ${match.id.split('_')[1] * 1 + 1}`;
-
-            matchCard.innerHTML = `
-                <div class="bracket-match-header">
-                    <span>${matchLabel}</span>
-                    <span>${formattedDate}</span>
+        thirdPlaceDiv.innerHTML = `
+            <div class="bracket-match" style="max-width: 250px; margin: 1.5rem auto 0 auto; display: flex; flex-direction: column;">
+                <div class="bracket-match-header" style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.04); padding-bottom: 0.25rem;">
+                    <span>3rd Place Match</span>
+                    <span>📍 ${thirdPlaceMatch.ground}</span>
                 </div>
-                <div class="bracket-match-body">
+                <div class="bracket-match-body" style="display: flex; flex-direction: column; gap: 0.4rem;">
                     <div class="${row1Class}">
                         <div class="bracket-team-info">
-                            <img class="bracket-team-flag" src="${flag1}" alt="${t1} flag">
+                            <img class="bracket-team-flag" src="${flag1}" alt="${t1} flag" style="width: 16px; height: 16px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color); flex-shrink: 0;">
                             <span class="bracket-team-name" title="${t1}">${t1}</span>
                         </div>
                         <span class="bracket-team-score">${score1}</span>
                     </div>
                     <div class="${row2Class}">
                         <div class="bracket-team-info">
-                            <img class="bracket-team-flag" src="${flag2}" alt="${t2} flag">
+                            <img class="bracket-team-flag" src="${flag2}" alt="${t2} flag" style="width: 16px; height: 16px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color); flex-shrink: 0;">
                             <span class="bracket-team-name" title="${t2}">${t2}</span>
                         </div>
                         <span class="bracket-team-score">${score2}</span>
                     </div>
                 </div>
-            `;
-
-            matchCard.addEventListener('click', () => {
-                openTweetModal([match]);
-            });
-
-            roundDiv.appendChild(matchCard);
+            </div>
+        `;
+        thirdPlaceDiv.addEventListener('click', () => {
+            openTweetModal([thirdPlaceMatch]);
         });
+        container.appendChild(thirdPlaceDiv);
+    }
+}
 
-        container.appendChild(roundDiv);
-    });
+// Tooltip Helpers
+function showTooltip(e, match, tooltipEl) {
+    if (!tooltipEl) return;
+    
+    const isPlayed = 'score' in match;
+    const score1 = isPlayed ? match.score.ft[0] : '-';
+    const score2 = isPlayed ? match.score.ft[1] : '-';
+    const t1 = match.team1_resolved || match.team1;
+    const t2 = match.team2_resolved || match.team2;
+    const flag1 = getFlagUrl(t1);
+    const flag2 = getFlagUrl(t2);
+
+    const winnerName = getMatchWinner(match);
+
+    let row1Style = '';
+    let row2Style = '';
+    if (winnerName) {
+        if (winnerName === t1) {
+            row1Style = 'color: var(--primary); font-weight: 600;';
+            row2Style = 'opacity: 0.5;';
+        } else if (winnerName === t2) {
+            row2Style = 'color: var(--primary); font-weight: 600;';
+            row1Style = 'opacity: 0.5;';
+        }
+    }
+
+    const matchLabel = match.round === 'Match for third place' ? '3rd Place Match' : `Match ${match.id.split('_')[1] * 1 + 1}`;
+
+    tooltipEl.innerHTML = `
+        <div class="bracket-tooltip-header">${match.round} - ${matchLabel}</div>
+        <div class="bracket-tooltip-team" style="${row1Style}">
+            <div style="display:flex; align-items:center; gap:0.4rem;">
+                <img src="${flag1}" style="width:14px; height:14px; border-radius:50%; object-fit:cover; border:1px solid var(--border-color);" />
+                <span>${t1}</span>
+            </div>
+            <strong>${score1}</strong>
+        </div>
+        <div class="bracket-tooltip-team" style="${row2Style}">
+            <div style="display:flex; align-items:center; gap:0.4rem;">
+                <img src="${flag2}" style="width:14px; height:14px; border-radius:50%; object-fit:cover; border:1px solid var(--border-color);" />
+                <span>${t2}</span>
+            </div>
+            <strong>${score2}</strong>
+        </div>
+        <div style="font-size:0.6rem; color:var(--text-muted); margin-top:0.4rem; border-top:1px solid rgba(255,255,255,0.06); padding-top:0.3rem;">
+            📍 ${match.ground}<br>📅 ${match.date} ${match.time || ''}
+        </div>
+    `;
+    
+    tooltipEl.classList.remove('hidden');
+    tooltipEl.style.opacity = '1';
+    positionTooltip(e, tooltipEl);
+}
+
+function positionTooltip(e, tooltipEl) {
+    if (!tooltipEl) return;
+    const x = e.pageX + 15;
+    const y = e.pageY + 15;
+    tooltipEl.style.left = `${x}px`;
+    tooltipEl.style.top = `${y}px`;
+}
+
+function hideTooltip(tooltipEl) {
+    if (!tooltipEl) return;
+    tooltipEl.style.opacity = '0';
+    tooltipEl.classList.add('hidden');
 }
