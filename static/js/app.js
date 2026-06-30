@@ -1026,6 +1026,12 @@ function renderBracket() {
         matchesMap[m.id] = m;
     });
 
+    const localDate = new Date();
+    const year = localDate.getFullYear();
+    const month = String(localDate.getMonth() + 1).padStart(2, '0');
+    const day = String(localDate.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+
     // 1. Build coordinate tree nodes in polar format mapped to cartesian (scaled by 1.5x)
     const treeNodes = {};
     const r32Order = [73, 76, 72, 74, 82, 83, 80, 81, 75, 77, 78, 79, 85, 87, 84, 86];
@@ -1142,6 +1148,7 @@ function renderBracket() {
             
             const mNode = matchesMap[node.id];
             const isCompleted = mNode && 'score' in mNode;
+            const isToday = mNode && mNode.date === todayStr;
             
             const rParent = parent1.r;
             const rChild = node.r;
@@ -1151,7 +1158,7 @@ function renderBracket() {
             const pathStr = getCircularConnectionPath(rParent, rChild, parent1.angle, parent2.angle, rArc, thetaMid, sweep, largeArc);
             
             svgHtml += `
-                <path d="${pathStr}" class="bracket-line ${isCompleted ? 'active' : ''}" />
+                <path d="${pathStr}" class="bracket-line ${isCompleted ? 'active' : ''} ${isToday ? 'today' : ''}" />
             `;
         }
     });
@@ -1161,11 +1168,12 @@ function renderBracket() {
     const sf2 = treeNodes['match_101'];
     const finalMatch = matchesMap[finalMatchId];
     const finalCompleted = finalMatch && 'score' in finalMatch;
+    const finalToday = finalMatch && finalMatch.date === todayStr;
     
     const { thetaMid: finalThetaMid, sweep: finalSweep, largeArc: finalLargeArc } = getAngleStats(sf1.angle, sf2.angle);
     const finalPathStr = getCircularConnectionPath(112.5, 45, sf1.angle, sf2.angle, 75, finalThetaMid, finalSweep, finalLargeArc);
     svgHtml += `
-        <path d="${finalPathStr}" class="bracket-line ${finalCompleted ? 'active' : ''}" />
+        <path d="${finalPathStr}" class="bracket-line ${finalCompleted ? 'active' : ''} ${finalToday ? 'today' : ''}" />
     `;
 
     // 3. Draw outermost flag circles and lines connecting to Round of 32 junctions
@@ -1192,6 +1200,7 @@ function renderBracket() {
         const flag2 = getFlagUrl(match.team2_resolved);
 
         const isCompleted = 'score' in match;
+        const isToday = match.date === todayStr;
         const rParent = rFlag;
         const rChild = node.r;
         const rArc = rParent - (rParent - rChild) * 0.4;
@@ -1200,7 +1209,7 @@ function renderBracket() {
         const pathStr = getCircularConnectionPath(rParent, rChild, a1, a2, rArc, thetaMid, sweep, largeArc);
 
         svgHtml += `
-            <path d="${pathStr}" class="bracket-line ${isCompleted ? 'active' : ''}" />
+            <path d="${pathStr}" class="bracket-line ${isCompleted ? 'active' : ''} ${isToday ? 'today' : ''}" />
         `;
 
         const team1Winner = getMatchWinner(match) === match.team1_resolved;
@@ -1208,11 +1217,11 @@ function renderBracket() {
         const hasWinner = team1Winner || team2Winner;
 
         svgHtml += `
-            <g class="bracket-flag-wrapper" style="--flag-cx: ${f1x}px; --flag-cy: ${f1y}px;" data-match-id="${match.id}">
+            <g class="bracket-flag-wrapper ${isToday ? 'today' : ''}" style="--flag-cx: ${f1x}px; --flag-cy: ${f1y}px;" data-match-id="${match.id}">
                 <circle cx="${f1x}" cy="${f1y}" r="21" fill="var(--bg-card)" stroke="${team1Winner ? 'var(--primary)' : 'var(--border-color)'}" stroke-width="${team1Winner ? '2' : '1.5'}" style="opacity: ${hasWinner && !team1Winner ? '0.45' : '1'}" />
                 <image href="${flag1}" x="${f1x - 16.5}" y="${f1y - 16.5}" width="33" height="33" clip-path="url(#flag-clip)" style="opacity: ${hasWinner && !team1Winner ? '0.45' : '1'}" />
             </g>
-            <g class="bracket-flag-wrapper" style="--flag-cx: ${f2x}px; --flag-cy: ${f2y}px;" data-match-id="${match.id}">
+            <g class="bracket-flag-wrapper ${isToday ? 'today' : ''}" style="--flag-cx: ${f2x}px; --flag-cy: ${f2y}px;" data-match-id="${match.id}">
                 <circle cx="${f2x}" cy="${f2y}" r="21" fill="var(--bg-card)" stroke="${team2Winner ? 'var(--primary)' : 'var(--border-color)'}" stroke-width="${team2Winner ? '2' : '1.5'}" style="opacity: ${hasWinner && !team2Winner ? '0.45' : '1'}" />
                 <image href="${flag2}" x="${f2x - 16.5}" y="${f2y - 16.5}" width="33" height="33" clip-path="url(#flag-clip)" style="opacity: ${hasWinner && !team2Winner ? '0.45' : '1'}" />
             </g>
@@ -1223,11 +1232,12 @@ function renderBracket() {
     Object.values(treeNodes).forEach(node => {
         const match = matchesMap[node.id];
         const winnerName = match ? getMatchWinner(match) : null;
+        const isToday = match && match.date === todayStr;
         
         if (winnerName) {
             const flagUrl = getFlagUrl(winnerName);
             svgHtml += `
-                <g class="bracket-flag-wrapper" style="--flag-cx: ${node.x}px; --flag-cy: ${node.y}px;" data-match-id="${node.id}">
+                <g class="bracket-flag-wrapper ${isToday ? 'today' : ''}" style="--flag-cx: ${node.x}px; --flag-cy: ${node.y}px;" data-match-id="${node.id}">
                     <circle cx="${node.x}" cy="${node.y}" r="17" fill="var(--bg-card)" stroke="var(--primary)" stroke-width="1.8" />
                     <image href="${flagUrl}" x="${node.x - 13.5}" y="${node.y - 13.5}" width="27" height="27" clip-path="url(#flag-clip)" />
                 </g>
@@ -1235,7 +1245,7 @@ function renderBracket() {
         } else {
             const isCompleted = match && 'score' in match;
             svgHtml += `
-                <circle cx="${node.x}" cy="${node.y}" r="${node.level === 4 ? '8' : '6.5'}" class="bracket-dot ${isCompleted ? 'completed' : ''}" data-match-id="${node.id}" />
+                <circle cx="${node.x}" cy="${node.y}" r="${node.level === 4 ? '8' : '6.5'}" class="bracket-dot ${isCompleted ? 'completed' : ''} ${isToday ? 'today' : ''}" data-match-id="${node.id}" />
             `;
         }
     });
